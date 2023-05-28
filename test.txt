@@ -1,2 +1,6 @@
 test
+<<<<<<< HEAD
 local test
+=======
+github test
+>>>>>>> 41bbc4cb792e0dd98f6fc06c663ab823e296ea26
