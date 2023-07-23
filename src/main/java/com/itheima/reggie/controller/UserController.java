@@ -7,6 +7,7 @@ import com.itheima.reggie.entity.User;
 import com.itheima.reggie.service.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpSession;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 @RestController
 @RequestMapping("/user")
@@ -22,6 +24,9 @@ public class UserController {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private RedisTemplate redisTemplate;
 
     /**
      * 发送手机验证码
@@ -34,7 +39,9 @@ public class UserController {
 
         log.info(user.toString());
         //将验证码存入session
-        session.setAttribute(user.getPhone(), "1234");
+        //session.setAttribute(user.getPhone(), "1234");
+        // 将验证码存入redis
+        redisTemplate.opsForValue().set(user.getPhone(), "1234", 5, TimeUnit.MINUTES);
 
         return R.success("发送验证码");
     }
@@ -52,7 +59,9 @@ public class UserController {
         //获取验证码
         String code = map.get("code").toString();
         //从session中获取验证码
-        Object codeInSession = session.getAttribute(phone);
+        //Object codeInSession = session.getAttribute(phone);
+        // 从redis缓存中获取验证码
+        Object codeInSession = redisTemplate.opsForValue().get(phone);
         //如果拿不到验证码，给出提示
         if (codeInSession == null) throw new CustomException("请先获取验证码");
 
@@ -73,6 +82,8 @@ public class UserController {
             }
             //将用户id加入到session中
             session.setAttribute("user", user.getId());
+            // 如果登录成功，则删除缓存的验证码
+            redisTemplate.delete(phone);
             return R.success(user);
         }
         return R.error("验证码不正确");
