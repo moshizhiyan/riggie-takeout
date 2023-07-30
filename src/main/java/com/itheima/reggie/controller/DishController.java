@@ -4,15 +4,13 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.itheima.reggie.common.R;
 import com.itheima.reggie.dto.DishDto;
-import com.itheima.reggie.entity.Category;
-import com.itheima.reggie.entity.Dish;
-import com.itheima.reggie.entity.DishFlavor;
-import com.itheima.reggie.entity.SetmealDish;
+import com.itheima.reggie.entity.*;
 import com.itheima.reggie.service.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
@@ -141,13 +139,12 @@ public class DishController {
         //要判断菜品是否包含在套餐内
         dishService.deleteJudgeSetmeal(ids);
         // 清理redis缓存，因为CategoryId比较难获取，所以全清
-        // 弹幕说删除前肯定会改变状态，所以更新那里已经清楚了，不管，写都写了，不能白写（保险一点）
+        // 弹幕说删除前肯定会改变状态，所以更新那里已经清除了，不管，写都写了，不能白写（保险一点）
         Set keys = redisTemplate.keys("dish_*");
         redisTemplate.delete(keys);
 
         return R.success("删除成功");
     }
-
     /**
      * 改变菜品售卖状态
      * @param ids
